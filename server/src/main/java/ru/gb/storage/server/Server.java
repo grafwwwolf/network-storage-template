@@ -42,11 +42,8 @@ public class Server {
                         protected void initChannel(NioSocketChannel nioSocketChannel) {
 
                             nioSocketChannel.pipeline().addLast(
-
                                     new LengthFieldBasedFrameDecoder(1024 * 1024, 0, 3, 0, 3),
                                     new LengthFieldPrepender(3),
-                                    new StringDecoder(),
-                                    new StringEncoder(),
                                     new JsonDecoder(),
                                     new JsonEncoder(),
                                     new FirstServerHandler()
