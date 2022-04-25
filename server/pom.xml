@@ -13,11 +13,23 @@
     <artifactId>server</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <java.version>11</java.version>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>ru.gb.network-storage</groupId>
             <artifactId>commons</artifactId>
             <version>DEV-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.70.Final</version>
         </dependency>
     </dependencies>
 
