@@ -52,7 +52,7 @@ public class Client {
                                         public void channelActive(ChannelHandlerContext ctx) {
                                             System.out.println("channel active");
                                             final FileRequestMessage message = new FileRequestMessage();
-                                            message.setPath("F:\\CitrixOnlinePluginFull.exe");
+                                            message.setPath("F:\\wrc.mkv");
                                             ctx.writeAndFlush(message);
                                             System.out.println(message);
                                         }
@@ -63,7 +63,7 @@ public class Client {
                                             if (message instanceof FileContentMessage) {
                                                 FileContentMessage fcm = (FileContentMessage) message;
 
-                                                try (final RandomAccessFile randomAccessFile = new RandomAccessFile("E:\\programms\\CitrixOnlinePluginFull.exe", "rw")) {
+                                                try (final RandomAccessFile randomAccessFile = new RandomAccessFile("E:\\programms\\Warcraft.mkv", "rw")) {
                                                     randomAccessFile.seek(fcm.getStartPosition());
                                                     randomAccessFile.write(fcm.getContent());
                                                     if (fcm.isLast()) {
