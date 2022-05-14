@@ -18,11 +18,11 @@ public class FirstServerHandler extends SimpleChannelInboundHandler<Message> {
     public void channelActive(ChannelHandlerContext ctx) {
         System.out.println("New Active channel");
         TextMessage answer = new TextMessage();
-        answer.setText("Successfully connection");
+        answer.setText("Successfully connection to server");
         ctx.writeAndFlush(answer);
     }
 
-    protected void channelRead0(ChannelHandlerContext ctx, Message message) throws IOException, InterruptedException {
+    protected void channelRead0(ChannelHandlerContext ctx, Message message) throws IOException {
 
         if (message instanceof TextMessage) {
             TextMessage msg = (TextMessage) message;
@@ -59,7 +59,7 @@ public class FirstServerHandler extends SimpleChannelInboundHandler<Message> {
     }
 
 
-    private void sendFile(ChannelHandlerContext ctx) throws IOException {
+    protected void sendFile(ChannelHandlerContext ctx) throws IOException {
 
         if (randomAccessFile != null) {
             final byte[] fileContent;

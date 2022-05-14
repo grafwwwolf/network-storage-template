@@ -51,10 +51,13 @@ public class Client {
                                         @Override
                                         public void channelActive(ChannelHandlerContext ctx) {
                                             System.out.println("channel active");
-                                            final FileRequestMessage message = new FileRequestMessage();
-                                            message.setPath("F:\\wrc.mkv");
-                                            ctx.writeAndFlush(message);
-                                            System.out.println(message);
+//                                            final FileRequestMessage message = new FileRequestMessage();
+//                                            message.setPath("F:\\wrc.mkv");
+//                                            ctx.writeAndFlush(message);
+//                                            System.out.println(message);
+                                            TextMessage txt = new TextMessage();
+                                            txt.setText("абра кадабра");
+                                            ctx.writeAndFlush(txt);
                                         }
 
                                         @Override
@@ -75,8 +78,13 @@ public class Client {
                                                     e.printStackTrace();
                                                 }
                                             }
+                                            if (message instanceof TextMessage) {
+                                                TextMessage txt = (TextMessage) message;
+                                                System.out.println(txt);
+                                            }
                                         }
                                     }
+//                                    new FirstClientHandler()
                             );
                         }
                     });
