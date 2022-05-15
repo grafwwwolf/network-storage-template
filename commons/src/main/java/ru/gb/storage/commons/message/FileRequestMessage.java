@@ -2,13 +2,22 @@ package ru.gb.storage.commons.message;
 
 public class FileRequestMessage extends Message {
 
-    private String path;
+    private String pathFromFile;
+    private String pathToFile;
 
-    public String getPath() {
-        return path;
+    public String getPathFromFile() {
+        return pathFromFile;
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public void setPathFromFile(String path) {
+        this.pathFromFile = path;
+    }
+
+    public String getPathToFile() {
+        return pathToFile;
+    }
+
+    public void setPathToFile(String pathToFile) {
+        this.pathToFile = pathToFile;
     }
 }

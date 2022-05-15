@@ -3,10 +3,11 @@ package ru.gb.storage.commons.message;
 public class FileContentMessage extends Message {
 
     private Long startPosition;
-
     private byte[] content;
-
     private boolean last;
+
+    private String fromFile;
+    private String toFile;
 
     public boolean isLast() {
         return last;
@@ -30,5 +31,21 @@ public class FileContentMessage extends Message {
 
     public void setStartPosition(Long startPosition) {
         this.startPosition = startPosition;
+    }
+
+    public String getFromFile() {
+        return fromFile;
+    }
+
+    public void setFromFile(String fromFile) {
+        this.fromFile = fromFile;
+    }
+
+    public String getToFile() {
+        return toFile;
+    }
+
+    public void setToFile(String toFile) {
+        this.toFile = toFile;
     }
 }

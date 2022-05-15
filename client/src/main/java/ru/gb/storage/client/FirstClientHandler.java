@@ -1,11 +1,13 @@
 package ru.gb.storage.client;
 
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import ru.gb.storage.commons.message.*;
 import ru.gb.storage.server.FirstServerHandler;
 
 import javax.swing.*;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -17,6 +19,7 @@ public class FirstClientHandler extends FirstServerHandler {
     private JTextArea chatArea;
     private ChannelHandlerContext context;
     private List<String> availableRequests = new ArrayList<>();
+    private RandomAccessFile randomAccessFile = null;
 
     public FirstClientHandler(JTextField msgInputField, JTextArea chatArea) {
         this.msgInputField = msgInputField;
@@ -38,6 +41,23 @@ public class FirstClientHandler extends FirstServerHandler {
             TextMessage msg = (TextMessage) message;
             System.out.println(msg.getText());
             chatArea.append(msg.getText() + "\n");
+        }
+
+        if (message instanceof FileContentMessage) {
+            FileContentMessage fcm = (FileContentMessage) message;
+            try (final RandomAccessFile accessFile = new RandomAccessFile(fcm.getToFile(), "rw")) {
+                accessFile.seek(fcm.getStartPosition());
+                accessFile.write(fcm.getContent());
+                System.out.println(fcm.getContent());
+                if (fcm.isLast()) {
+                    System.out.println("Загрузка файла окончена");
+                    chatArea.append("Загрузка файла окончена" + "\n");
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
 
@@ -75,18 +95,27 @@ public class FirstClientHandler extends FirstServerHandler {
             message = message.replaceAll("\\s+", " ");
             System.out.println(message);
             if (checkRequest(message)) {
-                if (message.startsWith("nws log")) {
-                    System.out.println(message);
-                    String[] logon = message.split(" ");
-                    if (logon.length == 4) {
-                        AuthenticationMessage msg = new AuthenticationMessage();
-                        msg.setLogin(logon[2]);
-                        msg.setPassword(logon[3]);
-                        System.out.println("log: " + msg.getLogin() + ", pswd: " + msg.getPassword());
-                        context.writeAndFlush(msg);
-                    } else {
-                        System.out.println("Введены неверные данные для авторизации");
-                        chatArea.append("Введены неверные данные для авторизации" + "\n");
+                if (message.startsWith("nws login")) {
+                    doLogonUser(message);
+//                    System.out.println(message);
+//                    String[] logon = message.split(" ");
+//                    if (logon.length == 4) {
+//                        AuthenticationMessage msg = new AuthenticationMessage();
+//                        msg.setLogin(logon[2]);
+//                        msg.setPassword(logon[3]);
+//                        System.out.println("login: " + msg.getLogin() + ", pswd: " + msg.getPassword());
+//                        context.writeAndFlush(msg);
+//                    } else {
+//                        System.out.println("Введены неверные данные для авторизации");
+//                        chatArea.append("Введены неверные данные для авторизации" + "\n");
+//                    }
+                } else if (message.startsWith("nws download")) {
+                    doDownloadFile(message);
+                } else if (message.startsWith("nws upload")) {
+                    try {
+                        doUploadFile(message);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             } else {
@@ -105,7 +134,9 @@ public class FirstClientHandler extends FirstServerHandler {
     }
 
     void autoRunRequestList() {
-        availableRequests.add("nws log");
+        availableRequests.add("nws login");
+        availableRequests.add("nws download");
+        availableRequests.add("nws upload");
     }
 
     boolean checkRequest(String request) {
@@ -114,6 +145,82 @@ public class FirstClientHandler extends FirstServerHandler {
             return false;
         }
         return availableRequests.contains(rq[0] + " " + rq[1]);
+    }
+
+    public void doLogonUser(String message) {
+        System.out.println(message);
+        String[] logon = message.split(" ");
+        if (logon.length == 4) {
+            AuthenticationMessage msg = new AuthenticationMessage();
+            msg.setLogin(logon[2]);
+            msg.setPassword(logon[3]);
+            System.out.println("login: " + msg.getLogin() + ", pswd: " + msg.getPassword());
+            context.writeAndFlush(msg);
+        } else {
+            System.out.println("Введены неверные данные для авторизации");
+            chatArea.append("Введены неверные данные для авторизации" + "\n");
+        }
+    }
+
+    public void doDownloadFile(String message) {
+        System.out.println(message);
+        String[] request = message.split(" ");
+        if (request.length == 4) {
+            FileRequestMessage msg = new FileRequestMessage();
+            msg.setPathFromFile(request[2]);
+            msg.setPathToFile(request[3]);
+            System.out.println("PathFromFile: " + msg.getPathFromFile() + ", PathToFile: " + msg.getPathToFile());
+            context.writeAndFlush(msg);
+        } else {
+            System.out.println("Введены неверные данные для загрузки файла");
+            chatArea.append("Введены неверные данные для загрузки файла" + "\n");
+        }
+    }
+
+    public void doUploadFile(String message) throws IOException {
+        System.out.println(message);
+        String[] request = message.split(" ");
+        if (request.length == 4) {
+            if (randomAccessFile == null) {
+                final File file = new File(request[2]);
+                randomAccessFile = new RandomAccessFile(file, "r");
+                sendFile(context, request[3]);
+            }
+        } else {
+            System.out.println("Введены неверные данные для загрузки файла");
+            chatArea.append("Введены неверные данные для загрузки файла" + "\n");
+        }
+    }
+
+    protected void sendFile(ChannelHandlerContext ctx, String toFile) throws IOException {
+
+        if (randomAccessFile != null) {
+            final byte[] fileContent;
+            final long available = randomAccessFile.length() - randomAccessFile.getFilePointer();
+            if (available > 64 * 1024) {
+                fileContent = new byte[64 * 1024];
+            } else {
+                fileContent = new byte[(int) available];
+            }
+            final FileContentMessage fileContentMessage = new FileContentMessage();
+            fileContentMessage.setToFile(toFile);
+            fileContentMessage.setStartPosition(randomAccessFile.getFilePointer());
+            randomAccessFile.read(fileContent);
+            fileContentMessage.setContent(fileContent);
+            boolean last = randomAccessFile.getFilePointer() == randomAccessFile.length();
+            fileContentMessage.setLast(last);
+            ctx.channel().writeAndFlush(fileContentMessage).addListener((ChannelFutureListener) channelFuture -> {
+                if (!last) {
+                    sendFile(ctx, toFile);
+                }
+            });
+            if (last) {
+                randomAccessFile.close();
+                randomAccessFile = null;
+                System.out.println("Загрузка файла окончена");
+                chatArea.append("Загрузка файла окончена" + "\n");
+            }
+        }
     }
 
 }

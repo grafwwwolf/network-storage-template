@@ -6,6 +6,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import ru.gb.storage.commons.message.*;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -51,15 +52,31 @@ public class FirstServerHandler extends SimpleChannelInboundHandler<Message> {
         if (message instanceof FileRequestMessage) {
             FileRequestMessage msg = (FileRequestMessage) message;
             if (randomAccessFile == null) {
-                final File file = new File(msg.getPath());
+                final File file = new File(msg.getPathFromFile());
                 randomAccessFile = new RandomAccessFile(file, "r");
-                sendFile(ctx);
+                sendFile(ctx, msg.getPathToFile());
+            }
+        }
+
+        if (message instanceof FileContentMessage) {
+            FileContentMessage fcm = (FileContentMessage) message;
+            try (final RandomAccessFile accessFile = new RandomAccessFile(fcm.getToFile(), "rw")) {
+                accessFile.seek(fcm.getStartPosition());
+                accessFile.write(fcm.getContent());
+                System.out.println(fcm.getContent());
+                if (fcm.isLast()) {
+                    System.out.println("Загрузка файла окончена");
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
 
 
-    protected void sendFile(ChannelHandlerContext ctx) throws IOException {
+    protected void sendFile(ChannelHandlerContext ctx, String toFile) throws IOException {
 
         if (randomAccessFile != null) {
             final byte[] fileContent;
@@ -70,6 +87,7 @@ public class FirstServerHandler extends SimpleChannelInboundHandler<Message> {
                 fileContent = new byte[(int) available];
             }
             final FileContentMessage fileContentMessage = new FileContentMessage();
+            fileContentMessage.setToFile(toFile);
             fileContentMessage.setStartPosition(randomAccessFile.getFilePointer());
             randomAccessFile.read(fileContent);
             fileContentMessage.setContent(fileContent);
@@ -77,7 +95,7 @@ public class FirstServerHandler extends SimpleChannelInboundHandler<Message> {
             fileContentMessage.setLast(last);
             ctx.channel().writeAndFlush(fileContentMessage).addListener((ChannelFutureListener) channelFuture -> {
                 if (!last) {
-                    sendFile(ctx);
+                    sendFile(ctx, toFile);
                     System.out.println("Message sent " + ++counter);
                 }
             });
