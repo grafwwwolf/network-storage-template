@@ -113,7 +113,7 @@ public class MyClient extends JFrame {
     public void prepareGUI() {
         // Параметры окна
         setBounds(600, 300, 500, 500);
-        setTitle("Клиент");
+        setTitle("NWS command console");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         chatArea = new JTextArea();
@@ -122,8 +122,6 @@ public class MyClient extends JFrame {
         add(new JScrollPane(chatArea), BorderLayout.CENTER);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
-//        JButton btnSendMsg = new JButton("Отправить");
-//        bottomPanel.add(btnSendMsg, BorderLayout.EAST);
         msgInputField = new JTextField();
         add(bottomPanel, BorderLayout.SOUTH);
         bottomPanel.add(msgInputField, BorderLayout.CENTER);
